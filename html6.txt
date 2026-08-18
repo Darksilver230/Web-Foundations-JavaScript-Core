@@ -1,0 +1,507 @@
+What is the difference between git merge and git rebase? When would you use each? What is the purpose of a .gitignore file? What does git stash do?
+1. git merge vs git rebase
+
+Both are used to combine changes from one branch into another, but they do it differently.
+
+git merge
+
+Merge combines the branches and creates a merge commit.
+
+Example:
+
+git checkout main
+git merge feature
+
+History might look like:
+
+A---B---C---D  main
+     \     /
+      E---F    feature
+
+Use merge when:
+
+You want to preserve the complete history of the branches.
+You're working with a shared/public branch.
+You don't want to rewrite existing commit history.
+Multiple people are collaborating on the same branch.
+git rebase
+
+Rebase takes your commits and moves them to the tip of another branch, creating a cleaner, linear history.
+
+git checkout feature
+git rebase main
+
+History becomes:
+
+A---B---C---E'---F'  feature
+
+Instead of creating a merge commit, Git reapplies your commits on top of the latest main.
+
+Use rebase when:
+
+You want a clean, linear commit history.
+You're updating your own feature branch with changes from main.
+You haven't shared/pushed the commits where rewriting history could affect others.
+
+B
+What is .gitignore?
+
+.gitignore tells Git which files or folders it should NOT track.
+
+You create a file called:
+
+.gitignore
+
+For example:
+
+node_modules/
+.env
+*.log
+
+This tells Git:
+
+Don't track node_modules
+Don't track .env
+Don't track log files
+
+This is useful for files that shouldn't be uploaded to GitHub, such as:
+
+Passwords/API keys
+Environment variables
+Dependencies
+Temporary files
+Build files
+Operating-system files
+
+For example, you might have:
+
+my-project/
+│
+├── index.html
+├── style.css
+├── script.js
+├── .gitignore
+└── node_modules/
+
+Your .gitignore could contain:
+
+node_modules/
+.env
+
+Git will then ignore those files.
+
+C
+ 3. What does git stash do?
+
+git stash temporarily stores your uncommitted changes so you can have a clean working directory.
+
+Imagine you're working on:
+
+feature-login
+
+You've modified several files but haven't finished.
+
+Suddenly, you need to switch to another branch.
+
+Instead of committing unfinished work, you can:
+
+git stash
+
+Your changes are temporarily stored and your working directory becomes clean.
+
+You can switch branches:
+
+git checkout main
+
+Do your work, then return:
+
+git checkout feature-login
+
+And restore your changes:
+
+git stash pop
+Useful stash commands
+git stash
+
+Temporarily save changes.
+
+git stash pop
+
+Restore the latest stash and remove it from the stash list.
+
+git stash list
+
+See your saved stashes.
+
+git stash apply
+
+Restore a stash without removing it from the stash list.
+
+In one sentence each
+git merge → combines branches while preserving their history.
+git rebase → moves commits to create a cleaner, linear history.
+.gitignore → tells Git which files/folders not to track.
+git stash → temporarily saves unfinished changes so you can switch branches or work on something else.
+ 
+II Create a GitHub repository for the portfolio project. Use feature branches for each section (header, about, projects, contact). Open a pull request for each branch with a description, and merge it. Resolve at least one intentional merge conflict.
+
+Create the GitHub repository
+
+On GitHub, create a repository called:
+
+portfolio-project
+
+Don't add files yet if you already have a local portfolio project.
+
+Then in VS Code, open your portfolio folder.
+
+Open the terminal:
+
+Ctrl + `
+
+Initialize Git:
+
+git init
+
+Set your main branch:
+
+git branch -M main
+
+Connect your GitHub repository:
+
+git remote add origin https://github.com/YOUR-USERNAME/portfolio-project.git
+
+Check:
+
+git remote -v
+2. Create the initial portfolio
+
+Your project can look something like:
+
+portfolio-project/
+│
+├── index.html
+├── style.css
+├── script.js
+└── images/
+
+Add and commit the initial files:
+
+git add .
+git commit -m "Initial portfolio setup"
+git push -u origin main
+
+Now your main branch is on GitHub.
+
+3. Create the Header branch
+
+Create a branch:
+
+git checkout -b feature/header
+
+Build your header/navigation in index.html.
+
+For example:
+
+<header>
+    <nav>
+        <h1>Israel Silver</h1>
+
+
+        <ul>
+            <li><a href="#about">About</a></li>
+            <li><a href="#projects">Projects</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+    </nav>
+</header>
+
+Then:
+
+git add .
+git commit -m "Add portfolio header"
+git push -u origin feature/header
+4. Open the Header Pull Request
+
+Go to your GitHub repository.
+
+GitHub should show:
+
+Compare & pull request
+
+Click it.
+
+Use:
+
+Title:
+
+Add portfolio header
+
+Description:
+
+## Changes
+- Added the portfolio header
+- Added navigation links
+- Added the portfolio name
+
+
+## Purpose
+This PR adds the main navigation/header section of the portfolio.
+
+Click Create pull request.
+
+Then click:
+
+Merge pull request → Confirm merge
+
+After merging, delete the branch if you want:
+
+git branch -d feature/header
+5. Create the About branch
+
+First return to the updated main branch:
+
+git checkout main
+git pull origin main
+
+Create the branch:
+
+git checkout -b feature/about
+
+Add your About section:
+
+<section id="about">
+    <h2>About Me</h2>
+
+
+    <p>
+        I am a Computer Science student interested in
+        AI, full-stack development and software engineering.
+    </p>
+</section>
+
+Commit:
+
+git add .
+git commit -m "Add about section"
+
+Push:
+
+git push -u origin feature/about
+
+Open another PR.
+
+Title:
+
+Add about section
+
+Description:
+
+## Changes
+- Added the About section
+- Added a short personal introduction
+- Added the technologies and interests section
+
+
+## Purpose
+This PR introduces the personal information section of the portfolio.
+
+Merge it.
+
+6. Create the Projects branch
+
+Update your local main:
+
+git checkout main
+git pull origin main
+
+Create the branch:
+
+git checkout -b feature/projects
+
+Add your projects:
+
+<section id="projects">
+    <h2>My Projects</h2>
+
+
+    <div class="project">
+        <h3>Mini Shop Website</h3>
+        <p>A website for displaying and selling beauty products.</p>
+    </div>
+
+
+    <div class="project">
+        <h3>Record Management System</h3>
+        <p>A system for managing visitor records.</p>
+    </div>
+</section>
+
+Commit and push:
+
+git add .
+git commit -m "Add projects section"
+git push -u origin feature/projects
+
+Create your third PR.
+
+Title:
+
+Add projects section
+
+Description:
+
+## Changes
+- Added projects section
+- Added project descriptions
+- Added project cards
+
+
+## Purpose
+This PR displays some of the projects included in the portfolio.
+
+Merge it.
+
+7. Create the Contact branch
+
+Again:
+
+git checkout main
+git pull origin main
+
+Create:
+
+git checkout -b feature/contact
+
+Add:
+
+<section id="contact">
+    <h2>Contact Me</h2>
+
+
+    <form>
+        <input type="text" placeholder="Your Name">
+        <input type="email" placeholder="Your Email">
+        <textarea placeholder="Your Message"></textarea>
+        <button type="submit">Send Message</button>
+    </form>
+</section>
+
+Commit:
+
+git add .
+git commit -m "Add contact section"
+git push -u origin feature/contact
+
+Create your fourth PR.
+
+Title:
+
+Add contact section
+
+Description:
+
+## Changes
+- Added contact section
+- Added contact form
+- Added name, email and message fields
+
+
+## Purpose
+This PR allows visitors to contact the portfolio owner.
+
+Merge it.
+
+8. Now resolve an intentional merge conflict
+
+This is the important part of the assignment.
+
+We'll intentionally make two branches modify the same line.
+
+First:
+
+git checkout main
+git pull origin main
+
+Create the first branch:
+
+git checkout -b feature/conflict-one
+
+Suppose your index.html has:
+
+<h1>Israel Silver</h1>
+
+Change it to:
+
+<h1>Israel Silver - Full Stack Developer</h1>
+
+Commit:
+
+git add .
+git commit -m "Update portfolio title"
+git push -u origin feature/conflict-one
+
+Create and merge its PR.
+
+9. Create the conflicting branch
+
+Return to main:
+
+git checkout main
+git pull origin main
+
+Create another branch:
+
+git checkout -b feature/conflict-two
+
+Change the same line to something different:
+
+<h1>Israel Silver - AI Developer</h1>
+
+Commit:
+
+git add .
+git commit -m "Update developer title"
+
+Now try to merge this branch into main:
+
+git checkout main
+git merge feature/conflict-two
+
+Git should produce a conflict because the same line was changed differently.
+
+You'll see something like:
+
+<<<<<<< HEAD
+<h1>Israel Silver - Full Stack Developer</h1>
+=======
+<h1>Israel Silver - AI Developer</h1>
+>>>>>>> feature/conflict-two
+10. Resolve the conflict
+
+Decide what you actually want.
+
+For example, you could combine them:
+
+<h1>Israel Silver - AI & Full Stack Developer</h1>
+
+Remove the conflict markers:
+
+<<<<<<< HEAD
+=======
+>>>>>>> feature/conflict-two
+
+Your code should now contain only:
+
+<h1>Israel Silver - AI & Full Stack Developer</h1>
+
+Then:
+
+git add .
+git commit -m "Resolve merge conflict"
+
+Push:
+
+git push origin main
+
+Now you've successfully demonstrated a merge conflict and its resolution.
