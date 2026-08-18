@@ -1,0 +1,1220 @@
+1. What is the JavaScript Event Loop?
+
+JavaScript is single-threaded, meaning it generally executes one piece of JavaScript at a time.
+
+But JavaScript can still handle things like:
+
+Timers
+Network requests
+User clicks
+Promises
+File operations
+
+The Event Loop coordinates this asynchronous work.
+
+Basic picture
+              JavaScript
+                 │
+                 ▼
+          ┌─────────────┐
+          │ Call Stack  │
+          └──────┬──────┘
+                 │
+                 │ Web APIs / runtime
+                 ▼
+          ┌─────────────┐
+          │    Queues   │
+          ├─────────────┤
+          │ Microtasks  │
+          │ Tasks       │
+          └──────┬──────┘
+                 │
+                 ▼
+          Event Loop
+                 │
+                 ▼
+           Call Stack
+
+For example:
+
+console.log("A");
+
+setTimeout(() => {
+    console.log("B");
+}, 0);
+
+console.log("C");
+
+You might think B happens immediately because the timer is 0.
+
+But the output is:
+
+A
+C
+B
+
+Why?
+
+console.log("A")
+      ↓
+Call Stack
+      ↓
+prints A
+
+setTimeout()
+      ↓
+Browser/runtime handles timer
+
+console.log("C")
+      ↓
+prints C
+
+Timer finishes
+      ↓
+callback goes to task queue
+
+Event Loop
+      ↓
+callback enters Call Stack
+      ↓
+prints B
+
+So setTimeout(..., 0) does not mean "run immediately." It means "run this callback when the current work and higher-priority queued work allow it."
+
+2. Promise vs async/await
+
+A Promise represents the eventual result of an asynchronous operation.
+
+A Promise can be:
+
+Pending
+   ↓
+ ┌───────┐
+ ↓       ↓
+Fulfilled  Rejected
+
+Example:
+
+const promise = fetch("/users");
+
+promise
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+    })
+    .catch(error => {
+        console.error(error);
+    });
+
+That's using the Promise API directly.
+
+async/await
+
+async/await is a cleaner way to work with Promises.
+
+The same basic operation can be written:
+
+async function getUsers() {
+    try {
+        const response = await fetch("/users");
+
+        const data = await response.json();
+
+        console.log(data);
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+Important point
+
+async/await doesn't replace Promises.
+
+It is syntax built around Promises that usually makes asynchronous code easier to read.
+
+Think:
+
+Promise
+   ↓
+The underlying asynchronous value
+
+async/await
+   ↓
+A cleaner way of writing Promise-based code
+Promise version
+fetch("/users")
+    .then(response => response.json())
+    .then(data => console.log(data))
+    .catch(error => console.error(error));
+async/await version
+async function getUsers() {
+    try {
+        const response = await fetch("/users");
+        const data = await response.json();
+
+        console.log(data);
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+For larger sequences of asynchronous operations, I would generally find async/await easier to read.
+
+3. Promise.all() vs Promise.allSettled()
+
+This is an important distinction.
+
+Suppose you need to make three requests:
+
+const users = fetch("/users");
+const posts = fetch("/posts");
+const comments = fetch("/comments");
+
+You can run them together.
+
+Promise.all()
+
+Use Promise.all() when every operation needs to succeed.
+
+const results = await Promise.all([
+    fetch("/users"),
+    fetch("/posts"),
+    fetch("/comments")
+]);
+
+If all succeed:
+
+/users    ✅
+/posts    ✅
+/comments ✅
+
+        ↓
+
+Promise.all()
+        ↓
+    Success
+
+But if one fails:
+
+/users    ✅
+/posts    ❌
+/comments ✅
+
+        ↓
+
+Promise.all()
+        ↓
+    Rejected
+
+The combined Promise rejects if any input Promise rejects.
+
+Good use case
+
+Imagine loading the essential data for a dashboard:
+
+const [user, account, permissions] = await Promise.all([
+    getUser(),
+    getAccount(),
+    getPermissions()
+]);
+
+If the application can't work without one of those pieces, Promise.all() makes sense.
+
+4. Promise.allSettled()
+
+Promise.allSettled() waits for every Promise to finish, regardless of whether it succeeded or failed.
+
+const results = await Promise.allSettled([
+    fetch("/users"),
+    fetch("/posts"),
+    fetch("/comments")
+]);
+
+You might get:
+
+[
+    { status: "fulfilled", value: ... },
+    { status: "rejected", reason: ... },
+    { status: "fulfilled", value: ... }
+]
+
+So:
+
+/users    ✅
+/posts    ❌
+/comments ✅
+
+        ↓
+
+Promise.allSettled()
+        ↓
+Wait for EVERYTHING
+        ↓
+Tell me what succeeded
+and what failed
+Good use case
+
+Imagine a page loading several independent widgets:
+
+Weather        ❌
+News           ✅
+Stock prices   ✅
+Recommendations ❌
+
+You might still want to display the successful information.
+Microtask Queue vs Task Queue
+
+This is probably the trickiest part.
+
+JavaScript has different queues for asynchronous callbacks.
+
+Two important ones are:
+
+Microtask Queue
+Task Queue
+Microtasks include things like:
+Promise .then()
+.catch()
+.finally()
+Continuations after await
+queueMicrotask()
+Tasks include things like:
+setTimeout
+setInterval
+DOM events such as clicks
+Some browser/runtime callbacks
+6. Which queue runs first?
+
+After JavaScript finishes the current synchronous code, the runtime processes microtasks before moving on to the next task.
+
+Consider:
+
+console.log("1");
+
+setTimeout(() => {
+    console.log("2");
+}, 0);
+
+Promise.resolve().then(() => {
+    console.log("3");
+});
+
+console.log("4");
+
+Output:
+
+1
+4
+3
+2
+
+Why?
+
+Step 1 — synchronous code
+console.log("1");
+
+prints:
+
+1
+
+Then the timer is scheduled.
+
+Then the Promise callback is scheduled as a microtask.
+
+Then:
+
+console.log("4");
+
+prints:
+
+4
+
+Now synchronous execution is finished.
+
+Step 2 — microtask queue
+
+The Promise callback runs:
+
+3
+Step 3 — task queue
+
+The timer callback runs:
+
+2
+
+So:
+
+Synchronous code
+       ↓
+Microtasks
+       ↓
+Next task
+       ↓
+Microtasks
+       ↓
+Next task
+       ↓
+...
+7. A very important example
+console.log("Start");
+
+setTimeout(() => {
+    console.log("Timeout");
+}, 0);
+
+Promise.resolve().then(() => {
+    console.log("Promise");
+});
+
+console.log("End");
+
+Output:
+
+Start
+End
+Promise
+Timeout
+
+The reason is:
+
+          Start
+            ↓
+       Synchronous
+            ↓
+           End
+            ↓
+      Microtask queue
+            ↓
+         Promise
+            ↓
+        Task queue
+            ↓
+         Timeout
+8. Where does async/await fit?
+
+Consider:
+
+async function example() {
+    console.log("A");
+
+    await Promise.resolve();
+
+    console.log("B");
+}
+
+console.log("C");
+
+example();
+
+console.log("D");
+
+Output:
+
+C
+A
+D
+B
+
+q2. Refactor the quiz application to use ES6+ syntax throughout. Add a feature that fetches questions from the Open Trivia DB API using fetch and async/await. Handle network errors gracefully with a user-facing error message.
+HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Trivia Quiz</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <main class="quiz-container">
+
+        <!-- Loading message -->
+        <section id="loading-screen">
+            <h1>Trivia Quiz</h1>
+            <p>Loading questions...</p>
+        </section>
+
+
+        <!-- Error message -->
+        <section id="error-screen" hidden>
+            <h1>Something went wrong</h1>
+
+            <p id="error-message">
+                Unable to load quiz questions.
+            </p>
+
+            <button id="retry-btn" type="button">
+                Try Again
+            </button>
+        </section>
+
+
+        <!-- Quiz -->
+        <section id="quiz-screen" hidden>
+
+            <header class="quiz-header">
+
+                <h1>Trivia Quiz</h1>
+
+                <p>
+                    Question
+                    <span id="question-number">1</span>
+                    of
+                    <span id="total-questions">10</span>
+                </p>
+
+                <p>
+                    Time:
+                    <span id="timer">15</span>s
+                </p>
+
+            </header>
+
+
+            <div class="progress">
+                <div id="progress-bar"></div>
+            </div>
+
+
+            <section class="question-area">
+
+                <h2 id="question">
+                    Question goes here
+                </h2>
+
+                <div id="answers"></div>
+
+            </section>
+
+
+            <footer class="quiz-footer">
+
+                <p>
+                    Score:
+                    <span id="score">0</span>
+                </p>
+
+                <button id="next-btn" type="button" disabled>
+                    Next Question
+                </button>
+
+            </footer>
+
+        </section>
+
+
+        <!-- Results -->
+        <section id="result-screen" hidden>
+
+            <h1>Quiz Complete!</h1>
+
+            <p>Your final score:</p>
+
+            <p>
+                <strong id="final-score">0</strong>
+                /
+                <span id="final-total">0</span>
+            </p>
+
+            <p id="result-message"></p>
+
+            <button id="restart-btn" type="button">
+                Play Again
+            </button>
+
+        </section>
+
+    </main>
+
+    <script type="module" src="script.js"></script>
+
+</body>
+</html>
+styles
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    font-family: Arial, sans-serif;
+
+    background: #f4f4f4;
+}
+
+.quiz-container {
+    width: min(90%, 650px);
+    padding: 30px;
+
+    background: white;
+    border-radius: 10px;
+}
+
+.quiz-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.quiz-header h1 {
+    width: 100%;
+}
+
+.progress {
+    width: 100%;
+    height: 10px;
+
+    margin: 20px 0;
+
+    background: #ddd;
+    border-radius: 5px;
+
+    overflow: hidden;
+}
+
+#progress-bar {
+    width: 0%;
+    height: 100%;
+
+    background: #333;
+
+    transition: width 0.3s ease;
+}
+
+#answers {
+    display: grid;
+    gap: 10px;
+}
+
+.answer-btn {
+    width: 100%;
+    padding: 15px;
+
+    border: 1px solid #ccc;
+    border-radius: 5px;
+
+    background: white;
+
+    text-align: left;
+
+    cursor: pointer;
+}
+
+.answer-btn:hover:not(:disabled) {
+    background: #eee;
+}
+
+.answer-btn.correct {
+    background: #b7e4c7;
+}
+
+.answer-btn.wrong {
+    background: #ffb4a2;
+}
+
+.answer-btn:disabled {
+    cursor: not-allowed;
+}
+
+.quiz-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-top: 30px;
+}
+
+button {
+    padding: 10px 20px;
+
+    border: none;
+    border-radius: 5px;
+
+    background: #222;
+    color: white;
+
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#error-screen {
+    text-align: center;
+}
+
+#result-screen {
+    text-align: center;
+}
+
+#final-score {
+    font-size: 3rem;
+}
+
+@media (max-width: 600px) {
+
+    .quiz-container {
+        padding: 20px;
+    }
+
+    .quiz-footer {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    #next-btn {
+        width: 100%;
+    }
+}
+javascript
+const API_URL =
+    "https://opentdb.com/api.php?amount=10&type=multiple";
+
+const QUESTION_TIME = 15;
+
+
+// DOM elements
+const loadingScreen = document.querySelector("#loading-screen");
+const errorScreen = document.querySelector("#error-screen");
+const quizScreen = document.querySelector("#quiz-screen");
+const resultScreen = document.querySelector("#result-screen");
+
+const errorMessage = document.querySelector("#error-message");
+
+const questionElement = document.querySelector("#question");
+const questionNumber = document.querySelector("#question-number");
+const totalQuestions = document.querySelector("#total-questions");
+
+const answersElement = document.querySelector("#answers");
+
+const scoreElement = document.querySelector("#score");
+
+const timerElement = document.querySelector("#timer");
+
+const progressBar = document.querySelector("#progress-bar");
+
+const nextButton = document.querySelector("#next-btn");
+const retryButton = document.querySelector("#retry-btn");
+const restartButton = document.querySelector("#restart-btn");
+
+const finalScore = document.querySelector("#final-score");
+const finalTotal = document.querySelector("#final-total");
+const resultMessage = document.querySelector("#result-message");
+
+
+// Quiz state
+let questions = [];
+let currentQuestion = 0;
+let score = 0;
+let timeLeft = QUESTION_TIME;
+let timer = null;
+
+
+// Decode HTML entities returned by the API
+const decodeHTML = (text) => {
+    const textArea = document.createElement("textarea");
+
+    textArea.innerHTML = text;
+
+    return textArea.value;
+};
+
+
+// Fetch questions from Open Trivia DB
+const fetchQuestions = async () => {
+
+    try {
+
+        showScreen("loading");
+
+        const response = await fetch(API_URL);
+
+        if (!response.ok) {
+            throw new Error(
+                `Request failed with status ${response.status}`
+            );
+        }
+
+        const data = await response.json();
+
+        if (data.response_code !== 0) {
+            throw new Error(
+                "The trivia service could not provide questions."
+            );
+        }
+
+        questions = data.results.map((item) => ({
+            question: decodeHTML(item.question),
+
+            answers: [
+                ...item.incorrect_answers.map(decodeHTML),
+                decodeHTML(item.correct_answer)
+            ],
+
+            correctAnswer: decodeHTML(item.correct_answer)
+        }));
+
+        // Shuffle each question's answers
+        questions = questions.map((question) => ({
+            ...question,
+
+            answers: [...question.answers].sort(
+                () => Math.random() - 0.5
+            )
+        }));
+
+        resetQuiz();
+
+        showScreen("quiz");
+
+        showQuestion();
+
+    } catch (error) {
+
+        console.error("Quiz loading error:", error);
+
+        showError(
+            "We couldn't load the quiz questions. " +
+            "Please check your internet connection and try again."
+        );
+    }
+};
+
+
+// Display the appropriate screen
+const showScreen = (screen) => {
+
+    loadingScreen.hidden = screen !== "loading";
+
+    errorScreen.hidden = screen !== "error";
+
+    quizScreen.hidden = screen !== "quiz";
+
+    resultScreen.hidden = screen !== "result";
+};
+
+
+// Display error message
+const showError = (message) => {
+
+    errorMessage.textContent = message;
+
+    showScreen("error");
+};
+
+
+// Reset quiz state
+const resetQuiz = () => {
+
+    clearInterval(timer);
+
+    currentQuestion = 0;
+
+    score = 0;
+
+    timeLeft = QUESTION_TIME;
+
+    scoreElement.textContent = score;
+
+    totalQuestions.textContent = questions.length;
+
+    finalTotal.textContent = questions.length;
+
+    progressBar.style.width = "0%";
+};
+
+
+// Display the current question
+const showQuestion = () => {
+
+    clearInterval(timer);
+
+    timeLeft = QUESTION_TIME;
+
+    timerElement.textContent = timeLeft;
+
+    nextButton.disabled = true;
+
+    const current = questions[currentQuestion];
+
+    questionNumber.textContent = currentQuestion + 1;
+
+    questionElement.textContent = current.question;
+
+    answersElement.replaceChildren();
+
+    const progress =
+        ((currentQuestion + 1) / questions.length) * 100;
+
+    progressBar.style.width = `${progress}%`;
+
+
+    current.answers.forEach((answer) => {
+
+        const button = document.createElement("button");
+
+        button.type = "button";
+
+        button.classList.add("answer-btn");
+
+        button.textContent = answer;
+
+        button.addEventListener(
+            "click",
+            () => selectAnswer(answer),
+            { once: true }
+        );
+
+        answersElement.appendChild(button);
+    });
+
+    startTimer();
+};
+
+
+// Start timer
+const startTimer = () => {
+
+    timer = setInterval(() => {
+
+        timeLeft--;
+
+        timerElement.textContent = timeLeft;
+
+        if (timeLeft <= 0) {
+
+            clearInterval(timer);
+
+            disableAnswers();
+
+            nextButton.disabled = false;
+        }
+
+    }, 1000);
+};
+
+
+// Handle selected answer
+const selectAnswer = (selectedAnswer) => {
+
+    clearInterval(timer);
+
+    const current = questions[currentQuestion];
+
+    const buttons =
+        answersElement.querySelectorAll(".answer-btn");
+
+    buttons.forEach((button) => {
+
+        button.disabled = true;
+
+        if (button.textContent === current.correctAnswer) {
+            button.classList.add("correct");
+        }
+
+        if (
+            button.textContent === selectedAnswer &&
+            selectedAnswer !== current.correctAnswer
+        ) {
+            button.classList.add("wrong");
+        }
+    });
+
+
+    if (selectedAnswer === current.correctAnswer) {
+
+        score++;
+
+        scoreElement.textContent = score;
+    }
+
+    nextButton.disabled = false;
+};
+
+
+// Disable answers when timer expires
+const disableAnswers = () => {
+
+    const current = questions[currentQuestion];
+
+    const buttons =
+        answersElement.querySelectorAll(".answer-btn");
+
+    buttons.forEach((button) => {
+
+        button.disabled = true;
+
+        if (button.textContent === current.correctAnswer) {
+            button.classList.add("correct");
+        }
+    });
+};
+
+
+// Move to next question
+const nextQuestion = () => {
+
+    currentQuestion++;
+
+    if (currentQuestion < questions.length) {
+
+        showQuestion();
+
+    } else {
+
+        showResults();
+    }
+};
+
+
+// Display results
+const showResults = () => {
+
+    clearInterval(timer);
+
+    finalScore.textContent = score;
+
+    const percentage =
+        (score / questions.length) * 100;
+
+    if (percentage === 100) {
+
+        resultMessage.textContent =
+            "Perfect score! Excellent work.";
+
+    } else if (percentage >= 60) {
+
+        resultMessage.textContent =
+            "Good job! Keep practicing.";
+
+    } else {
+
+        resultMessage.textContent =
+            "Keep studying and try again!";
+    }
+
+    showScreen("result");
+};
+
+
+// Event listeners
+nextButton.addEventListener("click", nextQuestion);
+
+retryButton.addEventListener("click", fetchQuestions);
+
+restartButton.addEventListener("click", fetchQuestions);
+
+
+// Start application
+fetchQuestions();
+What's different from your previous quiz?
+
+The biggest change is that we no longer have:
+
+const questions = [
+    {
+        question: "...",
+        answers: [...]
+    }
+];
+
+Instead, we get the questions from the API:
+
+const response = await fetch(API_URL);
+
+Then:
+
+const data = await response.json();
+
+And transform the API data into the format our quiz needs:
+
+questions = data.results.map((item) => ({
+    question: decodeHTML(item.question),
+
+    answers: [
+        ...item.incorrect_answers.map(decodeHTML),
+        decodeHTML(item.correct_answer)
+    ],
+
+    correctAnswer: decodeHTML(item.correct_answer)
+}));
+6. Why async/await?
+
+This:
+
+const fetchQuestions = async () => {
+    const response = await fetch(API_URL);
+    const data = await response.json();
+};
+
+is easier to understand than deeply nested .then() calls.
+
+Remember:
+
+async
+ ↓
+This function works with Promises
+
+await
+ ↓
+Wait for this Promise to settle
+
+It doesn't block the entire browser while waiting for the network.
+Why try...catch?
+
+This is what gives you graceful error handling:
+
+try {
+    const response = await fetch(API_URL);
+
+    // ...
+} catch (error) {
+    showError(
+        "We couldn't load the quiz questions. " +
+        "Please check your internet connection and try again."
+    );
+}
+
+If the network fails, the user doesn't see an ugly JavaScript error.
+
+Instead they see:
+
+┌──────────────────────────────────┐
+│       Something went wrong       │
+│                                  │
+│ We couldn't load the quiz       │
+│ questions. Please check your    │
+│ internet connection and try     │
+│ again.                           │
+│                                  │
+│          [ Try Again ]           │
+└──────────────────────────────────┘
+8. Why check response.ok?
+
+This is an important detail.
+
+You might write:
+
+const response = await fetch(API_URL);
+
+and assume that if something goes wrong, fetch() automatically throws.
+
+It doesn't throw for every HTTP error.
+
+That's why we check:
+
+if (!response.ok) {
+    throw new Error(
+        `Request failed with status ${response.status}`
+    );
+}
+
+Now an HTTP error such as 500 gets handled by our catch.
+
+9. Why response_code?
+
+Open Trivia DB provides a response code.
+
+We check:
+
+if (data.response_code !== 0) {
+    throw new Error(
+        "The trivia service could not provide questions."
+    );
+}
+
+So we're handling both:
+
+Network failure
+      ↓
+fetch() / catch
+
+HTTP failure
+      ↓
+response.ok
+
+API failure
+      ↓
+response_code
+
+That's much more robust than simply assuming the request worked.
+
+10. Why do we decode the questions?
+
+Open Trivia DB can return HTML entities.
+
+For example, the API might return something like:
+
+What is 2 &amp; 2?
+
+instead of:
+
+What is 2 & 2?
+
+So we use:
+
+const decodeHTML = (text) => {
+    const textArea = document.createElement("textarea");
+
+    textArea.innerHTML = text;
+
+    return textArea.value;
+};
+
+Then:
+
+decodeHTML(item.question)
+
+turns the encoded HTML entity into the correct display text.
+
+11. ES6+ features you're using
+
+Your mentor specifically asked for ES6+ syntax, and this version demonstrates several features.
+
+const
+const API_URL = "...";
+
+Used when the variable won't be reassigned.
+
+let
+let score = 0;
+
+Used when the value changes.
+
+Arrow functions
+const showQuestion = () => {
+    // ...
+};
+
+instead of:
+
+function showQuestion() {
+    // ...
+}
+Template literals
+progressBar.style.width = `${progress}%`;
+Spread syntax
+[
+    ...incorrectAnswers,
+    correctAnswer
+]
+Object spread
+{
+    ...question,
+    answers: newAnswers
+}

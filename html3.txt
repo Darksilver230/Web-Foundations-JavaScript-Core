@@ -1,0 +1,228 @@
+1a. What is a Closure?
+
+A closure happens when a function remembers and can access variables from the scope where it was created, even after that outer function has finished executing.
+
+Example:
+
+function createCounter() {
+    let count = 0;
+
+    return function () {
+        count++;
+        return count;
+    };
+}
+
+const counter = createCounter();
+
+console.log(counter()); // 1
+console.log(counter()); // 2
+console.log(counter()); // 3
+
+What's happening?
+
+createCounter()
+     ↓
+count = 0
+     ↓
+returns inner function
+     ↓
+createCounter() finishes
+     ↓
+inner function STILL remembers count
+
+Even though createCounter() has finished running, the returned function still has access to count.
+
+That's the closure.
+
+Real-world use case: private data
+
+Closures are useful when you want to keep a variable private so that other code can't directly modify it.
+
+function createBankAccount(initialBalance) {
+    let balance = initialBalance;
+
+    return {
+        deposit(amount) {
+            balance += amount;
+        },
+
+        getBalance() {
+            return balance;
+        }
+    };
+}
+
+const account = createBankAccount(1000);
+
+account.deposit(500);
+
+console.log(account.getBalance()); // 1500
+
+You can't directly do:
+
+account.balance = 0;
+
+because balance isn't exposed as a normal property. The functions have access to it through the closure.
+
+Simple definition to remember
+
+A closure is a function that remembers variables from its surrounding scope even after that scope has finished executing.
+
+1b. == vs ===
+
+Both compare values, but they behave differently.
+
+== — Loose equality
+
+== allows JavaScript to perform type conversion before comparing.
+
+5 == "5"
+
+Result:
+
+true
+
+Why?
+
+JavaScript converts "5" to the number 5.
+
+Another example:
+
+0 == false
+
+Result:
+
+true
+=== — Strict equality
+
+=== compares both the value AND the type.
+
+5 === "5"
+
+Result:
+
+false
+
+Because:
+
+5     → number
+"5"   → string
+
+Different types → false.
+
+1c.What is Hoisting?
+Hoisting describes JavaScript's behavior where declarations are processed before the code executes.
+
+For example:
+
+console.log(name);
+
+var name = "Israel";
+
+You might expect an error.
+
+But with var, JavaScript effectively processes the declaration like:
+
+var name;
+
+console.log(name); // undefined
+
+name = "Israel";
+
+So the result is:
+
+undefined
+var is hoisted
+console.log(x); // undefined
+
+var x = 10;
+
+The declaration is hoisted, but the assignment isn't.
+
+What about let and const?
+
+They are also hoisted in a technical sense, but you cannot access them before their declaration.
+
+console.log(x);
+
+let x = 10;
+
+This produces a:
+
+ReferenceError
+
+The period between entering the scope and reaching the declaration is called the Temporal Dead Zone (TDZ).
+
+Same with const:
+
+console.log(name);
+
+const name = "Israel";
+
+ ReferenceError.
+
+Function declarations
+
+Function declarations are also hoisted:
+
+sayHello();
+
+function sayHello() {
+    console.log("Hello!");
+}
+
+This works.
+
+Easy way to remember
+var
+→ hoisted
+→ initialized as undefined
+
+let / const
+→ hoisted
+→ NOT accessible before declaration
+→ Temporal Dead Zone
+
+function declaration
+→ can generally be called before its declaration
+. null vs undefined
+
+Both represent absence of a value, but they mean different things.
+
+undefined
+
+Usually means:
+
+A value hasn't been assigned.
+
+Example:
+
+let name;
+
+console.log(name);
+
+Result:
+
+undefined
+
+You created the variable but didn't give it a value.
+
+Another example:
+
+function getName() {
+}
+
+console.log(getName());
+
+Result:
+
+undefined
+
+The function doesn't return anything.
+
+null
+
+null usually means:
+
+The programmer intentionally says there is no value.

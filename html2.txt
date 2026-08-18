@@ -1,0 +1,303 @@
+1a. Flexbox
+Flexbox is mainly for one-dimensional layouts.
+
+That means you're primarily controlling items along one axis at a time:
+
+Row → left ↔ right
+Column → top ↕ bottom
+Example
+
+Imagine a navigation bar:
+
+<nav class="navbar">
+    <a href="#">Home</a>
+    <a href="#">About</a>
+    <a href="#">Services</a>
+    <a href="#">Contact</a>
+</nav>
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+Flexbox solves problems like:
+
+Putting items in a row
+Putting items in a column
+Centering content
+Distributing space between items
+Aligning items vertically/horizontally
+Making a group of items flexible
+
+1b. CSS Grid
+
+Grid is designed for two-dimensional layouts.
+
+You can control:
+
+Rows
+Columns
+Both simultaneously
+
+For example:
+
+.container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+}
+
+You could get:
+
+┌────────┐ ┌────────┐ ┌────────┐
+│ Card 1 │ │ Card 2 │ │ Card 3 │
+└────────┘ └────────┘ └────────┘
+
+┌────────┐ ┌────────┐ ┌────────┐
+│ Card 4 │ │ Card 5 │ │ Card 6 │
+└────────┘ └────────┘ └────────┘
+
+Grid solves problems like:
+
+Page layouts
+Multiple columns and rows
+Dashboards
+Galleries
+Card grids
+Complex layouts
+
+1c. min-width vs max-width in media queries
+
+This is extremely important for responsive design.
+
+max-width
+
+Means:
+
+Apply these styles when the screen is this width or smaller.
+
+Example:
+
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+    }
+}
+
+This means:
+
+0px ───────────────── 768px
+       APPLY
+
+So when the viewport is 768px or less, the styles inside the media query apply.
+
+This is commonly used for mobile/tablet breakpoints.
+
+min-width
+
+Means:
+
+Apply these styles when the screen is this width or larger.
+
+Example:
+
+@media (min-width: 769px) {
+    .navbar {
+        flex-direction: row;
+    }
+}
+
+This means:
+
+769px ─────────────────────────→
+          APPLY
+
+The styles apply when the viewport is 769px or wider.
+
+1d. The difference with an example
+
+Suppose you have:
+
+/* Default */
+body {
+    font-size: 16px;
+}
+
+@media (max-width: 600px) {
+    body {
+        font-size: 14px;
+    }
+}
+
+At:
+
+500px → 14px
+600px → 14px
+700px → 16px
+1000px → 16px
+
+Because max-width: 600px means 600px and below.
+
+Now:
+
+@media (min-width: 601px) {
+    body {
+        font-size: 18px;
+    }
+}
+
+means:
+
+500px → doesn't apply
+600px → doesn't apply
+601px → applies
+1000px → applies
+
+
+
+2.Given a Figma-style mockup of a 3-column responsive card layout, replicate it using CSS Grid. The layout must collapse to 1 column on mobile and 2 columns on tablet. No CSS framework allowed.  
+html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Cards</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <main>
+        <h1>Our Services</h1>
+
+        <section class="card-grid">
+
+            <article class="card">
+                <img src="images/web.jpg" alt="Web development">
+                <h2>Web Development</h2>
+                <p>
+                    Build modern and responsive websites using
+                    current web technologies.
+                </p>
+                <a href="#">Learn More</a>
+            </article>
+
+            <article class="card">
+                <img src="images/design.jpg" alt="UI and UX design">
+                <h2>UI/UX Design</h2>
+                <p>
+                    Create intuitive and attractive interfaces
+                    that provide a great user experience.
+                </p>
+                <a href="#">Learn More</a>
+            </article>
+
+            <article class="card">
+                <img src="images/database.jpg" alt="Database management">
+                <h2>Database Management</h2>
+                <p>
+                    Organize, manage, and protect data using
+                    reliable database systems.
+                </p>
+                <a href="#">Learn More</a>
+            </article>
+
+            <article class="card">
+                <img src="images/security.jpg" alt="Cybersecurity">
+                <h2>Cybersecurity</h2>
+                <p>
+                    Protect applications, systems, and data
+                    from security threats.
+                </p>
+                <a href="#">Learn More</a>
+            </article>
+
+            <article class="card">
+                <img src="images/mobile.jpg" alt="Mobile application development">
+                <h2>Mobile Development</h2>
+                <p>
+                    Develop applications designed for modern
+                    mobile devices.
+                </p>
+                <a href="#">Learn More</a>
+            </article>
+
+            <article class="card">
+                <img src="images/cloud.jpg" alt="Cloud computing">
+                <h2>Cloud Computing</h2>
+                <p>
+                    Build and deploy scalable applications
+                    using cloud technologies.
+                </p>
+                <a href="#">Learn More</a>
+            </article>
+
+        </section>
+    </main>
+
+</body>
+</html>
+.css
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 40px 20px;
+    font-family: Arial, sans-serif;
+}
+
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+/* Desktop: 3 columns */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.card {
+    border: 1px solid #ddd;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.card h2 {
+    margin-top: 20px;
+}
+
+.card a {
+    display: inline-block;
+    margin-top: 10px;
+}
+
+/* Tablet: 2 columns */
+@media (max-width: 900px) {
+    .card-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Mobile: 1 column */
+@media (max-width: 600px) {
+    .card-grid {
+        grid-template-columns: 1fr;
+    }
+}
